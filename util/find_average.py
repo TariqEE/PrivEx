@@ -1,8 +1,9 @@
 import pprint
-
+bad_sites = []
 if __name__ == '__main__':
   results = {}
   epochs = 0
+<<<<<<< HEAD
   bad_list = []
 
   with open('bad_count_sites.txt', 'r') as g:
@@ -10,7 +11,6 @@ if __name__ == '__main__':
       site = line.strip()
       if site not in bad_list and site != 'Other':
         bad_list.append(site)
-
 
   with open('consol-results.txt','r') as f:
     for line in f:
@@ -25,7 +25,6 @@ if __name__ == '__main__':
 
   for key in results:
     results[key] = results[key]/epochs
-#  pprint.pprint(results)
   print 'Epochs: ', epochs
   for site in sorted(results, key=results.get, reverse=False):
     print site, results[site]
