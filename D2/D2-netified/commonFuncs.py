@@ -1,4 +1,6 @@
-from cffiECC import _C, _FFI
+from petlib.bindings import _C, _FFI, Const
+from petlib.ec import *
+#from cffiECC import _C, _FFI
 
 num_DC=10
 num_TKG=3

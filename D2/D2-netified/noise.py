@@ -8,4 +8,3 @@ def Noise(sigma, sum_of_sq, p_exit):
     phi = math.sqrt(sigma/sum_of_sq)
     n_raw = phi*p_exit*random_sample
     return n_raw
-

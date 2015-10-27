@@ -1,12 +1,16 @@
 from StatKeeper import StatKeeper
+from petlib.bindings import _C, _FFI, Const
+from petlib.ec import *
 from commonFuncs import *
 from partialDecryptor import *
 from cryptoCounter import *
-from cffiECC import _C, _FFI
+#from cffiECC import _C, _FFI
+
+import random
 
 if __name__ == "__main__":
   stats = StatKeeper()
-
+  random.seed('PrivEx')
   #ctx = _FFI.new("SHA256_CTX *")
   #md = _FFI.new("unsigned char[]", 32)
   #_C.SHA256_Init(ctx)
@@ -76,7 +80,7 @@ if __name__ == "__main__":
     buf = D[-1].test_decrypt()
     result = D[-1].finaldecrypt(buf)
     assert result == range(-100,100)
-
+    print repr(result)
 
 
     print res

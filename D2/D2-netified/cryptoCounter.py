@@ -2,8 +2,9 @@ from noise import Noise
 from exit_weight import *
 from commonFuncs import sigma, resolution
 from commonFuncs import *
-from cffiECC import _C, _FFI
-
+#from cffiECC import _C, _FFI
+from petlib.bindings import _C, _FFI, Const
+from petlib.ec import *
 
 class crypto_counts:
   def __init__(self, labels, pubkey, curveID = 409, fingerprint = "fingerprint"):
