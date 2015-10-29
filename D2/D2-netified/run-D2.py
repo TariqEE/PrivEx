@@ -4,7 +4,6 @@ from petlib.ec import *
 from commonFuncs import *
 from partialDecryptor import *
 from cryptoCounter import *
-#from cffiECC import _C, _FFI
 
 import random
 
@@ -80,11 +79,9 @@ if __name__ == "__main__":
     buf = D[-1].test_decrypt()
     result = D[-1].finaldecrypt(buf)
     assert result == range(-100,100)
-    print repr(result)
-
 
     print res
-    #assert sum(res) == items
+    assert sum(res) == 99935
 
   stats.print_stats()
 

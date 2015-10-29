@@ -1,4 +1,3 @@
-#from cffiECC import _C, _FFI
 from petlib.bindings import _C, _FFI, Const
 from petlib.ec import *
 from binascii import hexlify
@@ -26,9 +25,13 @@ class partialDecryptor:
     self.key = _C.EC_KEY_new_by_curve_name(self.curveID)
     _C.EC_KEY_set_group(self.key, self.ecgroup)
     _C.EC_KEY_generate_key(self.key)
+    
+    print self.key
 
     s_priv = _C.EC_KEY_get0_private_key(self.key)
     s_pub = _C.EC_KEY_get0_public_key(self.key)
+    print s_pub
+    
     self.proof = NIZKPK_prove_DL(self.ecgroup, s_pub, s_priv)
 
 

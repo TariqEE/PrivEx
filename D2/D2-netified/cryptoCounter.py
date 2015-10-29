@@ -2,7 +2,6 @@ from noise import Noise
 from exit_weight import *
 from commonFuncs import sigma, resolution
 from commonFuncs import *
-#from cffiECC import _C, _FFI
 from petlib.bindings import _C, _FFI, Const
 from petlib.ec import *
 
