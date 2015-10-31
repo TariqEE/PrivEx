@@ -42,12 +42,18 @@ def NIZKPK_prove_DL(ecgroup, pub, priv):
     # c = H(G, pub, B)
     # s = priv * c + b
     # return (c,s)
-    bB = _C.EC_KEY_new_by_curve_name(_C.EC_GROUP_get_curve_name(ecgroup))
-    _C.EC_KEY_set_group(bB, ecgroup)
-    _C.EC_KEY_generate_key(bB)
-    b = _C.EC_KEY_get0_private_key(bB)
-    B = _C.EC_KEY_get0_public_key(bB)
-    G = _C.EC_GROUP_get0_generator(ecgroup)
+    
+    bB = EcGroup(ecgroup.nid())
+    G = bB.generator()
+    b = bB.order().random()
+    B = b * G
+    
+#    bB = _C.EC_KEY_new_by_curve_name(_C.EC_GROUP_get_curve_name(ecgroup))
+#    _C.EC_KEY_set_group(bB, ecgroup)
+#    _C.EC_KEY_generate_key(bB)
+#    b = _C.EC_KEY_get0_private_key(bB)
+#    B = _C.EC_KEY_get0_public_key(bB)
+#    G = _C.EC_GROUP_get0_generator(ecgroup)
 
     ctx = _FFI.new("SHA256_CTX *")
     md = _FFI.new("unsigned char[]", 32)

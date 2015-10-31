@@ -8,31 +8,42 @@ class partialDecryptor:
     global _C
     self._C = _C
     self.curveID = curveID
+    
+    self.currPrivKey = None
+    self.prevPrivKey = None
 
     # Store the group we work in
-    # precompute tables and the generator
-    self.ecgroup = _C.EC_GROUP_new_by_curve_name(curveID)
-    if not _C.EC_GROUP_have_precompute_mult(self.ecgroup):
-        _C.EC_GROUP_precompute_mult(self.ecgroup, _FFI.NULL);
-    self.gen = _C.EC_GROUP_get0_generator(self.ecgroup)
-
-    ctx = _C.BN_CTX_new()
-    self.bnorder = _C.BN_new()
-    _C.EC_GROUP_get_order(self.ecgroup, self.bnorder, ctx)
-    self.order = int(_FFI.string(_C.BN_bn2dec(self.bnorder)))
-    _C.BN_CTX_free(ctx)
-
-    self.key = _C.EC_KEY_new_by_curve_name(self.curveID)
-    _C.EC_KEY_set_group(self.key, self.ecgroup)
-    _C.EC_KEY_generate_key(self.key)
+    # precompute tables and the generator and order
+    self.ecgroup = EcGroup(curveID)
+    self.gen = self.ecgroup.generator()
+    self.order = self.ecgroup.order()
     
-    print self.key
-
-    s_priv = _C.EC_KEY_get0_private_key(self.key)
-    s_pub = _C.EC_KEY_get0_public_key(self.key)
-    print s_pub
+    # Generate the private and public key pair
+    s_priv_key = self.order.random()
+    s_pub_key = s_priv_key * self.gen
     
-    self.proof = NIZKPK_prove_DL(self.ecgroup, s_pub, s_priv)
+    # Generate the NIZK proof (that we really know the key pair?)
+    self.proof = NIZKPK_prove_DL(self.ecgroup, s_pub_key, s_priv_key)
+    
+#    self.ecgroup = _C.EC_GROUP_new_by_curve_name(curveID)
+#    if not _C.EC_GROUP_have_precompute_mult(self.ecgroup):
+#        _C.EC_GROUP_precompute_mult(self.ecgroup, _FFI.NULL);
+#    self.gen = _C.EC_GROUP_get0_generator(self.ecgroup)
+
+#    ctx = _C.BN_CTX_new()
+#    self.bnorder = _C.BN_new()
+#    _C.EC_GROUP_get_order(self.ecgroup, self.bnorder, ctx)
+#    self.order = int(_FFI.string(_C.BN_bn2dec(self.bnorder)))
+#    _C.BN_CTX_free(ctx)
+
+#    self.key = _C.EC_KEY_new_by_curve_name(self.curveID)
+#    _C.EC_KEY_set_group(self.key, self.ecgroup)
+#    _C.EC_KEY_generate_key(self.key)
+
+#    s_priv = _C.EC_KEY_get0_private_key(self.key)
+#    s_pub = _C.EC_KEY_get0_public_key(self.key)
+    
+#    self.proof = NIZKPK_prove_DL(self.ecgroup, s_pub, s_priv)
 
 
   def __del__(self):
