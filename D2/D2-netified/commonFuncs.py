@@ -1,5 +1,6 @@
 from petlib.bindings import _C, _FFI, Const
 from petlib.ec import *
+from zkp import *
 
 num_DC=10
 num_TKG=3
@@ -37,17 +38,19 @@ def point2str(ecgroup, point):
 
 ## Functions to create and check NIZKPKs
 def NIZKPK_prove_DL(ecgroup, pub, priv):
+    
+    params = setup(ecgroup.nid())
+    G, g, o = params 
+ 
+    proof = prove(params, pub, g, priv)   
+    return proof
+
     # b rand
     # B = b * G
     # c = H(G, pub, B)
     # s = priv * c + b
     # return (c,s)
-    
-    bB = EcGroup(ecgroup.nid())
-    G = bB.generator()
-    b = bB.order().random()
-    B = b * G
-    
+
 #    bB = _C.EC_KEY_new_by_curve_name(_C.EC_GROUP_get_curve_name(ecgroup))
 #    _C.EC_KEY_set_group(bB, ecgroup)
 #    _C.EC_KEY_generate_key(bB)
@@ -55,65 +58,73 @@ def NIZKPK_prove_DL(ecgroup, pub, priv):
 #    B = _C.EC_KEY_get0_public_key(bB)
 #    G = _C.EC_GROUP_get0_generator(ecgroup)
 
-    ctx = _FFI.new("SHA256_CTX *")
-    md = _FFI.new("unsigned char[]", 32)
-    _C.SHA256_Init(ctx)
-    buf, size = point2str(ecgroup, G)
-    _C.SHA256_Update(ctx, buf, size)
-    buf, size = point2str(ecgroup, pub)
-    _C.SHA256_Update(ctx, buf, size)
-    buf, size = point2str(ecgroup, B)
-    _C.SHA256_Update(ctx, buf, size)
-    _C.SHA256_Final(md, ctx)
-    c = _C.BN_bin2bn(md, 32, _FFI.NULL)
+#    ctx = _FFI.new("SHA256_CTX *")
+#    md = _FFI.new("unsigned char[]", 32)
+#    _C.SHA256_Init(ctx)
+#    buf, size = point2str(ecgroup, G)
+#    _C.SHA256_Update(ctx, buf, size)
+#    buf, size = point2str(ecgroup, pub)
+#    _C.SHA256_Update(ctx, buf, size)
+#    buf, size = point2str(ecgroup, B)
+#    _C.SHA256_Update(ctx, buf, size)
+#    _C.SHA256_Final(md, ctx)
+#    c = _C.BN_bin2bn(md, 32, _FFI.NULL)
 
-    bnctx = _C.BN_CTX_new()
-    order = _C.BN_new()
-    _C.EC_GROUP_get_order(ecgroup, order, bnctx)
+#    bnctx = _C.BN_CTX_new()
+#    order = _C.BN_new()
+#    _C.EC_GROUP_get_order(ecgroup, order, bnctx)
 
-    privc = _C.BN_new()
-    s = _C.BN_new()
-    _C.BN_mul(privc, priv, c, bnctx)
-    _C.BN_mod_add(s, privc, b, order, bnctx)
+#    privc = _C.BN_new()
+#    s = _C.BN_new()
+#    _C.BN_mul(privc, priv, c, bnctx)
+#    _C.BN_mod_add(s, privc, b, order, bnctx)
 
-    _C.EC_KEY_free(bB)
-    _C.BN_CTX_free(bnctx)
-    _C.BN_clear_free(privc)
-    _C.BN_clear_free(order)
-    return c,s
+#    _C.EC_KEY_free(bB)
+#    _C.BN_CTX_free(bnctx)
+#    _C.BN_clear_free(privc)
+#    _C.BN_clear_free(order)
+#    return c,s
 
 def NIZKPK_verify_DL(ecgroup, pub, proof):
-    # c =?= H(G, pub, s * G - c * pub)
-    c,s = proof
 
-    negc = _C.BN_new()
-    _C.BN_copy(negc, c)
-    _C.BN_set_negative(negc, 1)
-
-    G = _C.EC_GROUP_get0_generator(ecgroup)
-    B = _C.EC_POINT_new(ecgroup)
-    _C.EC_POINT_mul(ecgroup, B, s, pub, negc, _FFI.NULL)
-    _C.BN_clear_free(negc)
-
-    ctx = _FFI.new("SHA256_CTX *")
-    md = _FFI.new("unsigned char[]", 32)
-    _C.SHA256_Init(ctx)
-    buf, size = point2str(ecgroup, G)
-    _C.SHA256_Update(ctx, buf, size)
-    buf, size = point2str(ecgroup, pub)
-    _C.SHA256_Update(ctx, buf, size)
-    buf, size = point2str(ecgroup, B)
-    _C.SHA256_Update(ctx, buf, size)
-    _C.SHA256_Final(md, ctx)
-    cprime = _C.BN_bin2bn(md, 32, _FFI.NULL)
-
-    diff = _C.BN_cmp(cprime, c)
-
-    _C.BN_clear_free(cprime)
-    _C.EC_POINT_free(B)
-
-    if diff != 0:
+    params = setup(ecgroup.nid())
+    G, g, o = params
+   
+    verifyResult = verify(params, pub, g, proof)
+    if (verifyResult == False):
         raise Exception("DL proof failed")
+    
+    # c =?= H(G, pub, s * G - c * pub)
+#    c,s = proof
+
+#    negc = _C.BN_new()
+#    _C.BN_copy(negc, c)
+#    _C.BN_set_negative(negc, 1)
+
+#    G = _C.EC_GROUP_get0_generator(ecgroup)
+#    B = _C.EC_POINT_new(ecgroup)
+#    _C.EC_POINT_mul(ecgroup, B, s, pub, negc, _FFI.NULL)
+#    _C.BN_clear_free(negc)
+
+#    ctx = _FFI.new("SHA256_CTX *")
+#    md = _FFI.new("unsigned char[]", 32)
+#    _C.SHA256_Init(ctx)
+#    buf, size = point2str(ecgroup, G)
+#    _C.SHA256_Update(ctx, buf, size)
+#    buf, size = point2str(ecgroup, pub)
+#    _C.SHA256_Update(ctx, buf, size)
+#    buf, size = point2str(ecgroup, B)
+#    _C.SHA256_Update(ctx, buf, size)
+#    _C.SHA256_Final(md, ctx)
+#    cprime = _C.BN_bin2bn(md, 32, _FFI.NULL)
+
+#    diff = _C.BN_cmp(cprime, c)
+
+#    _C.BN_clear_free(cprime)
+#    _C.EC_POINT_free(B)
+
+#    if diff != 0:
+#        raise Exception("DL proof failed")
 
 def NIZKPK_free_DL_proof(proof):
     c,s = proof
