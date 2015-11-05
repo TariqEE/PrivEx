@@ -19,11 +19,11 @@ class partialDecryptor:
     self.order = self.ecgroup.order()
     
     # Generate the private and public key pair
-    s_priv_key = self.order.random()
-    s_pub_key = s_priv_key * self.gen
+    self.currPrivKey = self.order.random()
+    self.currPubKey = self.currPrivKey * self.gen
     
     # Generate the NIZK proof (that we really know the key pair?)
-    self.proof = NIZKPK_prove_DL(self.ecgroup, s_pub_key, s_priv_key)
+    self.proof = NIZKPK_prove_DL(self.ecgroup, self.currPubKey, self.currPrivKey)
     
 #    self.ecgroup = _C.EC_GROUP_new_by_curve_name(curveID)
 #    if not _C.EC_GROUP_have_precompute_mult(self.ecgroup):
@@ -53,8 +53,10 @@ class partialDecryptor:
     _C.BN_clear_free(self.bnorder)
 
   def combinekey(self, pubkey = None):
+    s_pub = self.currPubKey
+
     _C = self._C
-    s_pub = _C.EC_KEY_get0_public_key(self.key)
+#    s_pub = _C.EC_KEY_get0_public_key(self.curr)
     NIZKPK_verify_DL(self.ecgroup, s_pub, self.proof)
     NIZKPK_free_DL_proof(self.proof)
     self.proof = None
