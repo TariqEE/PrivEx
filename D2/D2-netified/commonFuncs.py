@@ -1,9 +1,10 @@
 from petlib.bindings import _C, _FFI, Const
 from petlib.ec import *
 from zkp import *
+from hashlib import sha256
 
 num_DC=10
-num_TKG=3
+num_TKG=2
 num_websites=100
 
 sigma = 240
@@ -128,8 +129,10 @@ def NIZKPK_verify_DL(ecgroup, pub, proof):
 
 def NIZKPK_free_DL_proof(proof):
     c,s = proof
-    _C.BN_clear_free(c)
-    _C.BN_clear_free(s)
+    del(c)
+    del(s)
+#    _C.BN_clear_free(c)
+#    _C.BN_clear_free(s)
 
 # Prove that DL_G(pub) = DL_X(Y) for each (X,Y) \in pairs.
 # priv is this common private value.
@@ -239,9 +242,13 @@ def NIZKPK_verify_eqDL(ecgroup, pub, proof):
 
 def NIZKPK_free_eqDL_proof(proof):
     pairs,c,s = proof
+    del(c)
+    del(s)
     for (X,Y) in pairs:
-        _C.EC_POINT_free(X)
-        _C.EC_POINT_free(Y)
-    _C.BN_clear_free(c)
-    _C.BN_clear_free(s)
+        del(X)
+        del(Y)
+     #   _C.EC_POINT_free(X)
+     #   _C.EC_POINT_free(Y)
+    #_C.BN_clear_free(c)
+    #_C.BN_clear_free(s)
 

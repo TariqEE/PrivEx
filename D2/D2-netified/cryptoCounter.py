@@ -16,10 +16,14 @@ class crypto_counts:
 
     # Store the group we work in
     # precompute tables and the generator
-    self.ecgroup = _C.EC_GROUP_new_by_curve_name(curveID)
-    if not _C.EC_GROUP_have_precompute_mult(self.ecgroup):
-        _C.EC_GROUP_precompute_mult(self.ecgroup, _FFI.NULL);
-    self.gen = _C.EC_GROUP_get0_generator(self.ecgroup)
+    self.ecgroup = EcGroup(curveID)
+    self.gen = self.ecgroup.generator()
+    self.order = self.ecgroup.order()
+    
+#    self.ecgroup = _C.EC_GROUP_new_by_curve_name(curveID)
+#    if not _C.EC_GROUP_have_precompute_mult(self.ecgroup):
+#        _C.EC_GROUP_precompute_mult(self.ecgroup, _FFI.NULL);
+#    self.gen = _C.EC_GROUP_get0_generator(self.ecgroup)
 
     # This is where we store the ECEG ciphertexts
     self.buf = []
@@ -28,88 +32,138 @@ class crypto_counts:
     twbw, p_exit, num_of_dc, sum_of_sq = prob_exit(consensus, fingerprint)
 
     for label in labels:
-      # Make session key
-      session = _C.EC_KEY_new_by_curve_name(curveID)
-      _C.EC_KEY_set_group(session, self.ecgroup)
-      _C.EC_KEY_generate_key(session)
-
-      s_pub = _C.EC_KEY_get0_public_key(session)
-      s_priv = _C.EC_KEY_get0_private_key(session)
-
-      alpha = _C.EC_POINT_new(self.ecgroup)
-      _C.EC_POINT_copy(alpha, s_pub);
-
-      beta = _C.EC_POINT_new(self.ecgroup)
-      _C.EC_POINT_copy(beta, self.pubkey);
-      _C.EC_POINT_mul(self.ecgroup, beta, _FFI.NULL, beta, s_priv, _FFI.NULL)
-
+      #Make session key
+      s_priv = self.order.random()
+      s_pub = s_priv * self.gen
+      
+      alpha = copy(s_pub)
+      
+      beta = copy(self.pubkey)
+      beta = beta.pt_mul(s_priv)
+      
       # Adding noise and setting the resolution
-      n = _C.BN_new()
       res_noise = int(Noise(sigma, sum_of_sq, p_exit) * resolution)
-
-      if res_noise < 0:
-        _C.BN_set_word(n, -res_noise)
-        _C.BN_set_negative(n, 1)
-      else:
-        _C.BN_set_word(n, res_noise)
-
-      kappa = _C.EC_POINT_new(self.ecgroup)
-      _C.EC_POINT_mul(self.ecgroup, kappa, _FFI.NULL, self.gen, n, _FFI.NULL)
-      _C.EC_POINT_add(self.ecgroup, beta, beta, kappa, _FFI.NULL)
-      _C.EC_POINT_free(kappa)
-
-      _C.EC_KEY_free(session)
-      _C.BN_clear_free(n)
-
+      n = Bn(res_noise)
+      
+      kappa = copy(self.gen)
+      kappa = kappa.pt_mul(n)
+      beta = beta + kappa
+      
+      del(kappa)
+      del(n)
+      
       # Save the ECEG ciphertext
       c = (alpha, beta)
       self.lab[label] = c
       self.buf += [c]
-
+      
       # Save the resolution
-      resolute = _C.BN_new()
-      _C.BN_set_word(resolute, resolution)
-      self.resolution = _C.EC_POINT_new(self.ecgroup)
-      _C.EC_POINT_mul(self.ecgroup, self.resolution, _FFI.NULL, self.gen, resolute, _FFI.NULL)
-      _C.BN_clear_free(resolute)
+      resolute = Bn(resolution)
+      self.resolution = copy(self.gen)
+      self.resolution = self.resolution.pt_mul(resolute)
+      del(resolute)
+      
+#    for label in labels:
+#      # Make session key
+#      session = _C.EC_KEY_new_by_curve_name(curveID)
+#      _C.EC_KEY_set_group(session, self.ecgroup)
+#      _C.EC_KEY_generate_key(session)
+
+#      s_pub = _C.EC_KEY_get0_public_key(session)
+#      s_priv = _C.EC_KEY_get0_private_key(session)
+
+#      alpha = _C.EC_POINT_new(self.ecgroup)
+#      _C.EC_POINT_copy(alpha, s_pub);
+
+#      beta = _C.EC_POINT_new(self.ecgroup)
+#      _C.EC_POINT_copy(beta, self.pubkey);
+#      _C.EC_POINT_mul(self.ecgroup, beta, _FFI.NULL, beta, s_priv, _FFI.NULL)
+
+#      # Adding noise and setting the resolution
+#      n = _C.BN_new()
+#      res_noise = int(Noise(sigma, sum_of_sq, p_exit) * resolution)
+
+#      if res_noise < 0:
+#        _C.BN_set_word(n, -res_noise)
+#        _C.BN_set_negative(n, 1)
+#      else:
+#        _C.BN_set_word(n, res_noise)
+
+#      kappa = _C.EC_POINT_new(self.ecgroup)
+#      _C.EC_POINT_mul(self.ecgroup, kappa, _FFI.NULL, self.gen, n, _FFI.NULL)
+#      _C.EC_POINT_add(self.ecgroup, beta, beta, kappa, _FFI.NULL)
+#      _C.EC_POINT_free(kappa)
+
+#      _C.EC_KEY_free(session)
+#      _C.BN_clear_free(n)
+
+#      # Save the ECEG ciphertext
+#      c = (alpha, beta)
+#      self.lab[label] = c
+#      self.buf += [c]
+
+#      # Save the resolution
+#      resolute = _C.BN_new()
+#      _C.BN_set_word(resolute, resolution)
+#      self.resolution = _C.EC_POINT_new(self.ecgroup)
+#      _C.EC_POINT_mul(self.ecgroup, self.resolution, _FFI.NULL, self.gen, resolute, _FFI.NULL)
+#      _C.BN_clear_free(resolute)
 
   def addone(self, label):
-    _C = self._C
+#    _C = self._C
     (_, beta) = self.lab[label]
 
-    _C.EC_POINT_add(self.ecgroup, beta, beta, self.resolution, _FFI.NULL);
+    beta = beta.pt_add(self.resolution)
+#    _C.EC_POINT_add(self.ecgroup, beta, beta, self.resolution, _FFI.NULL);
 
   def randomize(self):
-    _C = self._C
+#    _C = self._C
     for (a,b) in self.buf:
       # Make session key
-      session = _C.EC_KEY_new_by_curve_name(self.curveID)
-      _C.EC_KEY_set_group(session, self.ecgroup)
-      _C.EC_KEY_generate_key(session)
+      s_priv = self.order.random()
+      s_pub = s_priv * self.gen
+      
+#      session = _C.EC_KEY_new_by_curve_name(self.curveID)
+#      _C.EC_KEY_set_group(session, self.ecgroup)
+#      _C.EC_KEY_generate_key(session)
 
-      s_pub = _C.EC_KEY_get0_public_key(session)
-      s_priv = _C.EC_KEY_get0_private_key(session)
+#      s_pub = _C.EC_KEY_get0_public_key(session)
+#      s_priv = _C.EC_KEY_get0_private_key(session)
 
-      alpha = _C.EC_POINT_new(self.ecgroup)
-      _C.EC_POINT_copy(alpha, s_pub);
+      alpha = copy(s_pub)
+      
+      beta = copy(self.pubkey)
+      beta = beta.pt_mul(s_priv)
+      
+#      alpha = _C.EC_POINT_new(self.ecgroup)
+#      _C.EC_POINT_copy(alpha, s_pub);
 
-      beta = _C.EC_POINT_new(self.ecgroup)
-      _C.EC_POINT_copy(beta, self.pubkey);
-      _C.EC_POINT_mul(self.ecgroup, beta, _FFI.NULL, beta, s_priv, _FFI.NULL)
+#      beta = _C.EC_POINT_new(self.ecgroup)
+#      _C.EC_POINT_copy(beta, self.pubkey);
+#      _C.EC_POINT_mul(self.ecgroup, beta, _FFI.NULL, beta, s_priv, _FFI.NULL)
 
-      _C.EC_POINT_add(self.ecgroup, a, a, alpha, _FFI.NULL);
-      _C.EC_POINT_add(self.ecgroup, b, b, beta, _FFI.NULL);
+      a = a.pt_add(alpha)
+      b = b.pt_add(beta)
+      
+      
 
-      _C.EC_POINT_clear_free(alpha)
-      _C.EC_POINT_clear_free(beta)
+#      _C.EC_POINT_add(self.ecgroup, a, a, alpha, _FFI.NULL);
+#      _C.EC_POINT_add(self.ecgroup, b, b, beta, _FFI.NULL);
 
-      _C.EC_KEY_free(session)
+#      _C.EC_POINT_clear_free(alpha)
+#      _C.EC_POINT_clear_free(beta)
+
+#      _C.EC_KEY_free(session)
 
   def extract(self):
     buf = []
     for (a,b) in self.buf:
-        acopy = _C.EC_POINT_dup(a, self.ecgroup)
-        bcopy = _C.EC_POINT_dup(b, self.ecgroup)
+        acopy = EcPt(self.ecgroup)
+        acopy = copy(a)
+        bcopy = EcPt(self.ecgroup)
+        bcopy = copy(b)
+#        acopy = _C.EC_POINT_dup(a, self.ecgroup)
+#        bcopy = _C.EC_POINT_dup(b, self.ecgroup)
         buf.append((acopy,bcopy))
     return buf
 
@@ -123,8 +177,10 @@ class crypto_counts:
     assert len(self.buf) == len(data)
 
     for ((a,b), (alpha, beta)) in zip(data, self.buf):
-      _C.EC_POINT_add(self.ecgroup, a, a, alpha, _FFI.NULL);
-      _C.EC_POINT_add(self.ecgroup, b, b, beta, _FFI.NULL);
+      a = a.pt_add(alpha)
+      b = b.pt_add(beta)
+#      _C.EC_POINT_add(self.ecgroup, a, a, alpha, _FFI.NULL);
+#      _C.EC_POINT_add(self.ecgroup, b, b, beta, _FFI.NULL);
 
     return data, clidata, hashval
 

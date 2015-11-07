@@ -5,8 +5,8 @@ from commonFuncs import *
 
 class partialDecryptor:
   def __init__(self, curveID = 409):
-    global _C
-    self._C = _C
+#    global _C
+#    self._C = _C
     self.curveID = curveID
     
     self.currPrivKey = None
@@ -53,23 +53,31 @@ class partialDecryptor:
     _C.BN_clear_free(self.bnorder)
 
   def combinekey(self, pubkey = None):
-    s_pub = self.currPubKey
+    s_pub = EcPt(self.ecgroup)
+    s_pub = copy(self.currPubKey)
 
-    _C = self._C
+#    _C = self._C
 #    s_pub = _C.EC_KEY_get0_public_key(self.curr)
     NIZKPK_verify_DL(self.ecgroup, s_pub, self.proof)
-    NIZKPK_free_DL_proof(self.proof)
+    NIZKPK_free_DL_proof(self.proof)  # Put back in when we figure out how to garbage collect these vars
     self.proof = None
-
-    if pubkey == None:
-
-      pk = _C.EC_POINT_new(self.ecgroup)
-      _C.EC_POINT_copy(pk, s_pub)
-      return pk
-
-    else:
-      _C.EC_POINT_add(self.ecgroup, pubkey, pubkey, s_pub, _FFI.NULL);
+    
+    if type(pubkey) != EcPt: # changed from the '== None' test since that was giving an error in debug mode
+      pubkey = EcPt(self.ecgroup)
+      pubkey = copy(s_pub)
       return pubkey
+  
+    else: 
+      pubkey.pt_add(s_pub)
+      return pubkey
+#
+#      pk = _C.EC_POINT_new(self.ecgroup)
+#      _C.EC_POINT_copy(pk, s_pub)
+#      return pk
+#
+#    else:
+#      _C.EC_POINT_add(self.ecgroup, pubkey, pubkey, s_pub, _FFI.NULL);
+#      return pubkey
 
   def partialdecrypt(self, buf):
     _C = self._C
