@@ -12,30 +12,42 @@ resolution = 10
 
 # Commit to a list of encrypted counters by hashing
 def hash_clidata(ecgroup, data):
-    ctx = _FFI.new("SHA256_CTX *")
-    md = _FFI.new("unsigned char[]", 32)
-    _C.SHA256_Init(ctx)
+    ctx = sha256()
+    
+#    ctx = _FFI.new("SHA256_CTX *")
+#    md = _FFI.new("unsigned char[]", 32)
+#   _C.SHA256_Init(ctx)
     for (a,b) in data:
-        buf, size = point2str(ecgroup, a)
-        _C.SHA256_Update(ctx, buf, size)
-        # print _FFI.buffer(buf, size)[:].encode("hex"),
-        buf, size = point2str(ecgroup, b)
-        _C.SHA256_Update(ctx, buf, size)
-        # print _FFI.buffer(buf, size)[:].encode("hex")
-    _C.SHA256_Final(md, ctx)
-    hashval = _FFI.buffer(md, 32)[:]
+        buf = a.export()
+        ctx.update(buf)
+        buf = b.export()
+        ctx.update(buf)
+    hashval = ctx.digest()
     return hashval
+#        buf, size = point2str(ecgroup, a)
+#        _C.SHA256_Update(ctx, buf, size)
+#        # print _FFI.buffer(buf, size)[:].encode("hex"),
+#        buf, size = point2str(ecgroup, b)
+#        _C.SHA256_Update(ctx, buf, size)
+#        # print _FFI.buffer(buf, size)[:].encode("hex")
+#    _C.SHA256_Final(md, ctx)
+#    hashval = _FFI.buffer(md, 32)[:]
+#    return hashval
 
 ## Convert a point to a string representation
 def point2str(ecgroup, point):
-    bnctx = _C.BN_CTX_new()
-    size = _C.EC_POINT_point2oct(ecgroup, point, _C.POINT_CONVERSION_COMPRESSED,
-    _FFI.NULL, 0, bnctx)
-    buf = _FFI.new("unsigned char[]", size)
-    _C.EC_POINT_point2oct(ecgroup, point, _C.POINT_CONVERSION_COMPRESSED,
-    buf, size, bnctx)
-    _C.BN_CTX_free(bnctx)
-    return buf, size
+    buf = point.export()
+    return buf
+
+#    bnctx = _C.BN_CTX_new()
+#    size = _C.EC_POINT_point2oct(ecgroup, point, _C.POINT_CONVERSION_COMPRESSED,
+#    _FFI.NULL, 0, bnctx)
+#    buf = _FFI.new("unsigned char[]", size)
+#    _C.EC_POINT_point2oct(ecgroup, point, _C.POINT_CONVERSION_COMPRESSED,
+#    buf, size, bnctx)
+#    _C.BN_CTX_free(bnctx)
+
+#    return buf, size
 
 ## Functions to create and check NIZKPKs
 def NIZKPK_prove_DL(ecgroup, pub, priv):

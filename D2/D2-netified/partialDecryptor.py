@@ -80,23 +80,32 @@ class partialDecryptor:
 #      return pubkey
 
   def partialdecrypt(self, buf):
-    _C = self._C
+#    _C = self._C
     pairs = []
     for (a,b) in buf:
+      k_priv = self.currPrivKey
+      k_pub = self.currPubKey
+      alpha = copy(a)
+      savealpha = copy(a)
+#      k_priv = _C.EC_KEY_get0_private_key(self.key)
+#      k_pub = _C.EC_KEY_get0_public_key(self.key)
+#      alpha = _C.EC_POINT_dup(a, self.ecgroup)
+#      savealpha = _C.EC_POINT_dup(a, self.ecgroup)
 
-      k_priv = _C.EC_KEY_get0_private_key(self.key)
-      k_pub = _C.EC_KEY_get0_public_key(self.key)
-      alpha = _C.EC_POINT_dup(a, self.ecgroup)
-      savealpha = _C.EC_POINT_dup(a, self.ecgroup)
+      alpha = alpha.pt_mul(k_priv)
+      savealphapriv = copy(alpha)
+#      _C.EC_POINT_mul(self.ecgroup, alpha, _FFI.NULL, alpha, k_priv, _FFI.NULL);
+#      savealphapriv = _C.EC_POINT_dup(alpha, self.ecgroup)
 
-      _C.EC_POINT_mul(self.ecgroup, alpha, _FFI.NULL, alpha, k_priv, _FFI.NULL);
-      savealphapriv = _C.EC_POINT_dup(alpha, self.ecgroup)
       pairs.append((savealpha, savealphapriv))
-      _C.EC_POINT_invert(self.ecgroup, alpha, _FFI.NULL);
-      _C.EC_POINT_add(self.ecgroup, b, b, alpha, _FFI.NULL);
 
+      alpha = alpha.pt_neg()
+      b = b.pt_add(alpha)
+#      _C.EC_POINT_invert(self.ecgroup, alpha, _FFI.NULL);
+#      _C.EC_POINT_add(self.ecgroup, b, b, alpha, _FFI.NULL);
 
-      _C.EC_POINT_clear_free(alpha)
+      del(alpha)
+#      _C.EC_POINT_clear_free(alpha)
 
     proof = NIZKPK_prove_eqDL(self.ecgroup, k_pub, pairs, k_priv)
     return proof
