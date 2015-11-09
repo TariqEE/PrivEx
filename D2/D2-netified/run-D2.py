@@ -39,8 +39,7 @@ if __name__ == "__main__":
   mock = [0] * len(labels)
   for i in range(items):
     l = len(labels)
-    x = clients[i % 10]
-    ## Keep the last 10 as zero to test decryption
+    x = clients[i % 10] ## Keep the last 10 as zero to test decryption
     with(stats["client_addone"]):
       x.addone(i % (l-10))
       mock[i % (l-10)] += 1
@@ -79,6 +78,7 @@ if __name__ == "__main__":
     buf = D[-1].test_decrypt()
     result = D[-1].finaldecrypt(buf)
     assert result == range(-100,100)
+    print result
 
     print res
     assert sum(res) == 99935
@@ -86,5 +86,7 @@ if __name__ == "__main__":
   stats.print_stats()
 
   for (a,b) in data:
-    _C.EC_POINT_clear_free(a)
-    _C.EC_POINT_clear_free(b)
+    del(a)
+    del(b)
+#    _C.EC_POINT_clear_free(a)
+#    _C.EC_POINT_clear_free(b)

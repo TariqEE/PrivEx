@@ -7,8 +7,8 @@ from petlib.ec import *
 
 class crypto_counts:
   def __init__(self, labels, pubkey, curveID = 409, fingerprint = "fingerprint"):
-    global _C
-    self._C = _C
+#    global _C
+#    self._C = _C
     self.num = len(labels)
     self.curveID = curveID
     self.pubkey = pubkey
@@ -36,18 +36,18 @@ class crypto_counts:
       s_priv = self.order.random()
       s_pub = s_priv * self.gen
       
-      alpha = copy(s_pub)
+      alpha = s_pub
       
-      beta = copy(self.pubkey)
+      beta = self.pubkey
       beta = beta.pt_mul(s_priv)
       
       # Adding noise and setting the resolution
       res_noise = int(Noise(sigma, sum_of_sq, p_exit) * resolution)
       n = Bn(res_noise)
       
-      kappa = copy(self.gen)
+      kappa = self.gen
       kappa = kappa.pt_mul(n)
-      beta = beta + kappa
+      beta = beta.pt_add(kappa)
       
       del(kappa)
       del(n)
@@ -59,7 +59,7 @@ class crypto_counts:
       
       # Save the resolution
       resolute = Bn(resolution)
-      self.resolution = copy(self.gen)
+      self.resolution = self.gen
       self.resolution = self.resolution.pt_mul(resolute)
       del(resolute)
       
@@ -111,15 +111,16 @@ class crypto_counts:
 
   def addone(self, label):
 #    _C = self._C
+    
     (_, beta) = self.lab[label]
-
+    
     beta = beta.pt_add(self.resolution)
 #    _C.EC_POINT_add(self.ecgroup, beta, beta, self.resolution, _FFI.NULL);
 
   def randomize(self):
 #    _C = self._C
     for (a,b) in self.buf:
-      # Make session key
+      # Make session keys
       s_priv = self.order.random()
       s_pub = s_priv * self.gen
       
@@ -130,9 +131,9 @@ class crypto_counts:
 #      s_pub = _C.EC_KEY_get0_public_key(session)
 #      s_priv = _C.EC_KEY_get0_private_key(session)
 
-      alpha = copy(s_pub)
+      alpha = s_pub
       
-      beta = copy(self.pubkey)
+      beta = self.pubkey
       beta = beta.pt_mul(s_priv)
       
 #      alpha = _C.EC_POINT_new(self.ecgroup)
@@ -144,24 +145,20 @@ class crypto_counts:
 
       a = a.pt_add(alpha)
       b = b.pt_add(beta)
-      
-      
-
 #      _C.EC_POINT_add(self.ecgroup, a, a, alpha, _FFI.NULL);
 #      _C.EC_POINT_add(self.ecgroup, b, b, beta, _FFI.NULL);
-
+      
+      del(a)
+      del(b)
 #      _C.EC_POINT_clear_free(alpha)
 #      _C.EC_POINT_clear_free(beta)
-
 #      _C.EC_KEY_free(session)
 
   def extract(self):
     buf = []
     for (a,b) in self.buf:
-        acopy = EcPt(self.ecgroup)
-        acopy = copy(a)
-        bcopy = EcPt(self.ecgroup)
-        bcopy = copy(b)
+        acopy = a
+        bcopy = b
 #        acopy = _C.EC_POINT_dup(a, self.ecgroup)
 #        bcopy = _C.EC_POINT_dup(b, self.ecgroup)
         buf.append((acopy,bcopy))
@@ -181,12 +178,14 @@ class crypto_counts:
       b = b.pt_add(beta)
 #      _C.EC_POINT_add(self.ecgroup, a, a, alpha, _FFI.NULL);
 #      _C.EC_POINT_add(self.ecgroup, b, b, beta, _FFI.NULL);
-
     return data, clidata, hashval
 
   def __del__(self):
-    self._C.EC_GROUP_free(self.ecgroup)
+    del(self.ecgroup)
+#    self._C.EC_GROUP_free(self.ecgroup)
     if self.buf is not None:
       for (a,b) in self.buf:
-        self._C.EC_POINT_clear_free(a)
-        self._C.EC_POINT_clear_free(b)
+        del(a)
+        del(b)
+#        self._C.EC_POINT_clear_free(a)
+#        self._C.EC_POINT_clear_free(b)
