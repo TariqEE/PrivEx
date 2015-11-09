@@ -3,9 +3,9 @@ from petlib.ec import *
 from zkp import *
 from hashlib import sha256
 
-num_DC=10
-num_TKG=1
-num_websites=11
+#num_DC=10
+#num_TKG=1
+#num_websites=11
 
 sigma = 240
 resolution = 10
@@ -20,9 +20,12 @@ def hash_clidata(ecgroup, data):
     for (a,b) in data:
         buf = a.export()
         ctx.update(buf)
+    #    print buf.encode("hex")
         buf = b.export()
         ctx.update(buf)
+    #    print buf.encode("hex")
     hashval = ctx.digest()
+    #print hashval.encode("hex")
     return hashval
 #        buf, size = point2str(ecgroup, a)
 #        _C.SHA256_Update(ctx, buf, size)

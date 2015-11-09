@@ -24,7 +24,7 @@ class partialDecryptor:
     
     # Generate the NIZK proof (that we really know the key pair?)
     self.proof = NIZKPK_prove_DL(self.ecgroup, self.currPubKey, self.currPrivKey)
-    
+    print self.currPubKey.export().encode("hex")
 #    self.ecgroup = _C.EC_GROUP_new_by_curve_name(curveID)
 #    if not _C.EC_GROUP_have_precompute_mult(self.ecgroup):
 #        _C.EC_GROUP_precompute_mult(self.ecgroup, _FFI.NULL);
@@ -65,10 +65,12 @@ class partialDecryptor:
     
     if type(pubkey) != EcPt: # changed from the '== None' test since that was giving an error in debug mode
       pubkey = s_pub
+      print pubkey.export().encode("hex")
       return pubkey
   
     else:
       pubkey = pubkey.pt_add(s_pub)
+      print pubkey.export().encode("hex")
       return pubkey
 #
 #      pk = _C.EC_POINT_new(self.ecgroup)

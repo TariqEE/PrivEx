@@ -12,6 +12,7 @@ class crypto_counts:
     self.num = len(labels)
     self.curveID = curveID
     self.pubkey = pubkey
+    print self.pubkey.export().encode("hex")
     self.lab = {}
 
     # Store the group we work in
@@ -62,7 +63,7 @@ class crypto_counts:
       self.resolution = self.gen
       self.resolution = self.resolution.pt_mul(resolute)
       del(resolute)
-      
+
 #    for label in labels:
 #      # Make session key
 #      session = _C.EC_KEY_new_by_curve_name(curveID)
@@ -111,14 +112,22 @@ class crypto_counts:
 
   def addone(self, label):
 #    _C = self._C
-    
-    (_, beta) = self.lab[label]
-    
+    (alpha, beta) = self.lab[label]
+
+    print "The lab in addone before: ", self.lab
+    print "The buf in addone before: ", self.buf    
     beta = beta.pt_add(self.resolution)
+    c = (alpha, beta)
+    self.lab[label] = c
+    self.buf = [c]
 #    _C.EC_POINT_add(self.ecgroup, beta, beta, self.resolution, _FFI.NULL);
+    print "The lab in addone after: ", self.lab
+    print "The buf in addone after: ", self.buf
 
   def randomize(self):
 #    _C = self._C
+    print "The lab in randomize: ", self.lab
+    print "The buf in randomize: ", self.buf
     for (a,b) in self.buf:
       # Make session keys
       s_priv = self.order.random()
