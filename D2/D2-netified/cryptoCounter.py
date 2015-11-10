@@ -4,6 +4,7 @@ from commonFuncs import sigma, resolution
 from commonFuncs import *
 from petlib.bindings import _C, _FFI, Const
 from petlib.ec import *
+from collections import OrderedDict
 
 class crypto_counts:
   def __init__(self, labels, pubkey, curveID = 409, fingerprint = "fingerprint"):
@@ -13,7 +14,7 @@ class crypto_counts:
     self.curveID = curveID
     self.pubkey = pubkey
     print self.pubkey.export().encode("hex")
-    self.lab = {}
+    self.lab = OrderedDict()
 
     # Store the group we work in
     # precompute tables and the generator
@@ -113,21 +114,22 @@ class crypto_counts:
   def addone(self, label):
 #    _C = self._C
     (alpha, beta) = self.lab[label]
-
-    print "The lab in addone before: ", self.lab
-    print "The buf in addone before: ", self.buf    
+    indice = self.lab.keys().index(label)
+    print "before add self.lab", self.lab
+    print "before add self.buf", self.buf
     beta = beta.pt_add(self.resolution)
+    ## since beta is pass by value and not reference we need to update 
+    ## self.lab[label] and self.buf(label) appropriately. Had to make self.lab
+    ## an ordered dictionary to maintain the indices across the two data structures.
     c = (alpha, beta)
     self.lab[label] = c
-    self.buf = [c]
+    self.buf[indice] = c
+    print "after add self.lab", self.lab
+    print "after add self.buf", self.buf
 #    _C.EC_POINT_add(self.ecgroup, beta, beta, self.resolution, _FFI.NULL);
-    print "The lab in addone after: ", self.lab
-    print "The buf in addone after: ", self.buf
 
   def randomize(self):
 #    _C = self._C
-    print "The lab in randomize: ", self.lab
-    print "The buf in randomize: ", self.buf
     for (a,b) in self.buf:
       # Make session keys
       s_priv = self.order.random()
