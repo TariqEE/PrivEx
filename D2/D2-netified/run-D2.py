@@ -7,6 +7,10 @@ from cryptoCounter import *
 
 import random
 
+num_DC=10
+num_TKG=1
+num_websites=100
+
 if __name__ == "__main__":
   stats = StatKeeper()
   random.seed('PrivEx')

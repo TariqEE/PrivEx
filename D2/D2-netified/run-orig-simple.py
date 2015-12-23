@@ -8,9 +8,7 @@ from exit_weight import *
 
 import random
 
-num_DC=1
-num_TKG=1
-num_websites=2
+num_websites=1
 
 sigma = 240
 resolution = 10
@@ -165,6 +163,7 @@ def hash_clidata(ecgroup, data):
     _C.SHA256_Init(ctx)
     for (a,b) in data:
         buf, size = point2str(ecgroup, a)
+        print _FFI.buffer(buf)[:].encode("hex")
         _C.SHA256_Update(ctx, buf, size)
         # print "a: ", _FFI.buffer(buf, size)[:].encode("hex")
         buf, size = point2str(ecgroup, b)
@@ -172,6 +171,7 @@ def hash_clidata(ecgroup, data):
         # print "b: ", _FFI.buffer(buf, size)[:].encode("hex")
     _C.SHA256_Final(md, ctx)
     hashval = _FFI.buffer(md, 32)[:]
+    print len(hashval)
     # print "hashval: ", hashval.encode("hex")
     return hashval
 
@@ -246,17 +246,19 @@ class crypto_counts:
   def addone(self, label):
     _C = self._C
     (_, beta) = self.lab[label]
+#    print "ID of beta BEFORE!: ", id(beta)
     beta_buf, _ = point2str(self.ecgroup, beta)
-    print "addone: self.lab before add", _FFI.buffer(beta_buf, 25)[:].encode("hex")
+#    print "addone: self.lab before add", _FFI.buffer(beta_buf, 25)[:].encode("hex")
     for (a,b) in self.buf:
       b_buf, _ = point2str(self.ecgroup, b)
-      print "addone: buf.b before add", _FFI.buffer(b_buf, 25)[:].encode("hex")
+#      print "addone: buf.b before add", _FFI.buffer(b_buf, 25)[:].encode("hex")
     _C.EC_POINT_add(self.ecgroup, beta, beta, self.resolution, _FFI.NULL);
+#    print "ID of beta After!: ", id(beta)
     beta_buf, _ = point2str(self.ecgroup, beta)
-    print "addone: self.lab before add", _FFI.buffer(beta_buf, 25)[:].encode("hex")
+#    print "addone: self.lab before add", _FFI.buffer(beta_buf, 25)[:].encode("hex")
     for (a,b) in self.buf:
       b_buf, _ = point2str(self.ecgroup, b)
-      print "addone: buf.b after add", _FFI.buffer(b_buf, 25)[:].encode("hex")
+#      print "addone: buf.b after add", _FFI.buffer(b_buf, 25)[:].encode("hex")
 
   def randomize(self):
     _C = self._C
@@ -671,19 +673,22 @@ if __name__ == "__main__":
   labels = range(num_websites)
   DC = crypto_counts(labels, pk)
 
-  for i in labels:
-    DC.addone(i)
+  items = 1
+  for i in range(items):
+    DC.addone(i % len(labels))
 
   DC.randomize()
 
   data = None
   hashes = []
   eqDLproofs = []
+  print "hash it!"
   data, clidata, hashval = DC.extract_into(data)
   hashes.append((clidata, hashval))
 
   # Check the hashes
   for (clidata, hashval) in hashes:
+    print "Check that hash!"
     if hash_clidata(TKS.ecgroup, clidata) != hashval:
         raise Exception("Hash mismatch!")
   eqDLproofs.append(TKS.partialdecrypt(data))

@@ -9,7 +9,7 @@ import random
 
 num_DC=1
 num_TKG=1
-num_websites=2
+num_websites=1
 
 if __name__ == "__main__":
   stats = StatKeeper()
@@ -39,12 +39,12 @@ if __name__ == "__main__":
       clients += [c]
 
   items = 1
-  mock = [0] * len(labels)
+#  mock = [0] * len(labels)
   for i in range(items):
     x = clients[i]
     with(stats["client_addone"]):
       x.addone(i)
-      mock[i] += 1
+#      mock[i] += 1
 
   print clients
   for c in clients:

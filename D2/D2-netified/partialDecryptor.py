@@ -24,7 +24,7 @@ class partialDecryptor:
     
     # Generate the NIZK proof (that we really know the key pair?)
     self.proof = NIZKPK_prove_DL(self.ecgroup, self.currPubKey, self.currPrivKey)
-    print self.currPubKey.export().encode("hex")
+#    print self.currPubKey.export().encode("hex")
 #    self.ecgroup = _C.EC_GROUP_new_by_curve_name(curveID)
 #    if not _C.EC_GROUP_have_precompute_mult(self.ecgroup):
 #        _C.EC_GROUP_precompute_mult(self.ecgroup, _FFI.NULL);
@@ -65,12 +65,11 @@ class partialDecryptor:
     
     if type(pubkey) != EcPt: # changed from the '== None' test since that was giving an error in debug mode
       pubkey = s_pub
-      print pubkey.export().encode("hex")
+#      print pubkey.export().encode("hex")
       return pubkey
   
     else:
-      pubkey = pubkey.pt_add(s_pub)
-      print pubkey.export().encode("hex")
+      pubkey.pt_add_inplace(s_pub)
       return pubkey
 #
 #      pk = _C.EC_POINT_new(self.ecgroup)
@@ -87,24 +86,24 @@ class partialDecryptor:
     for (a,b) in buf:
       k_priv = self.currPrivKey
       k_pub = self.currPubKey
-      alpha = a
-      savealpha = a
+      alpha = copy(a)
+      savealpha = copy(a)
 #      k_priv = _C.EC_KEY_get0_private_key(self.key)
 #      k_pub = _C.EC_KEY_get0_public_key(self.key)
 #      alpha = _C.EC_POINT_dup(a, self.ecgroup)
 #      savealpha = _C.EC_POINT_dup(a, self.ecgroup)
 
-      alpha = alpha.pt_mul(k_priv)
-      savealphapriv = alpha
+      alpha.pt_mul_inplace(k_priv)
+      savealphapriv = copy(alpha)
 #      _C.EC_POINT_mul(self.ecgroup, alpha, _FFI.NULL, alpha, k_priv, _FFI.NULL);
 #      savealphapriv = _C.EC_POINT_dup(alpha, self.ecgroup)
 
       pairs.append((savealpha, savealphapriv))
 
 #      print alpha
-      alpha = alpha.pt_neg()
+      alpha.pt_neg_inplace()
 #      print alpha
-      b = b.pt_add(alpha)
+      b.pt_add_inplace(alpha)
 #      _C.EC_POINT_invert(self.ecgroup, alpha, _FFI.NULL);
 #      _C.EC_POINT_add(self.ecgroup, b, b, alpha, _FFI.NULL);
 
@@ -115,6 +114,7 @@ class partialDecryptor:
     return proof
 
   def finaldecrypt(self, buf, table=None, table_size=100000):
+    print buf
 #    _C = self._C
 #    gamma = EcPt(self.ecgroup)
 #    gamma = _C.EC_POINT_new(self.ecgroup)
@@ -150,7 +150,7 @@ class partialDecryptor:
             raise
         lookup[lkey] = i
 
-        gamma = gamma.pt_add(self.gen)
+        gamma.pt_add_inplace(self.gen)
 #        _C.EC_POINT_add(self.ecgroup, gamma, gamma, self.gen, _FFI.NULL);
 
     del(gamma)

@@ -170,6 +170,7 @@ def hash_clidata(ecgroup, data):
         # print _FFI.buffer(buf, size)[:].encode("hex")
     _C.SHA256_Final(md, ctx)
     hashval = _FFI.buffer(md, 32)[:]
+    print len(hashval)
     return hashval
 
 class crypto_counts:
@@ -243,8 +244,11 @@ class crypto_counts:
   def addone(self, label):
     _C = self._C
     (_, beta) = self.lab[label]
-
+#    for (a, b) in self.buf:
+#      print "before:", _FFI.buffer(a, 32)[:].encode("hex"), _FFI.buffer(b, 32)[:].encode("hex")
     _C.EC_POINT_add(self.ecgroup, beta, beta, self.resolution, _FFI.NULL);
+#    for (a, b) in self.buf: 
+#      print "after:", _FFI.buffer(a, 32)[:].encode("hex"), _FFI.buffer(b, 32)[:].encode("hex")
 
   def randomize(self):
     _C = self._C
@@ -678,14 +682,16 @@ if __name__ == "__main__":
       clients += [c]
 
   items = 100000
-  mock = [0] * len(labels)
+#  mock = [0] * len(labels)
   for i in range(items):
     l = len(labels)
     x = clients[i % 10]
+#    x = clients[i]
     ## Keep the last 10 as zero to test decryption
     with(stats["client_addone"]):
+#      x.addone(i)
       x.addone(i % (l-10))
-      mock[i % (l-10)] += 1
+#      mock[i % (l-10)] += 1
 
   for c in clients:
     with(stats["client_rerandomize"]):

@@ -4,8 +4,8 @@ from zkp import *
 from hashlib import sha256
 
 #num_DC=10
-#num_TKG=1
-#num_websites=11
+#num_TKG=3
+#num_websites=100
 
 sigma = 240
 resolution = 10
@@ -20,12 +20,10 @@ def hash_clidata(ecgroup, data):
     for (a,b) in data:
         buf = a.export()
         ctx.update(buf)
-    #    print buf.encode("hex")
         buf = b.export()
         ctx.update(buf)
-    #    print buf.encode("hex")
     hashval = ctx.digest()
-    #print hashval.encode("hex")
+
     return hashval
 #        buf, size = point2str(ecgroup, a)
 #        _C.SHA256_Update(ctx, buf, size)
@@ -161,8 +159,8 @@ def NIZKPK_prove_eqDL(ecgroup, pub, pairs, priv):
     G = ecgroup.generator()
     order = ecgroup.order()
     b = order.random()
-    B = b * G
-    T = EcPt(ecgroup)
+    B = G.pt_mul(b)
+#    T = EcPt(ecgroup)
     
 #    bB = _C.EC_KEY_new_by_curve_name(_C.EC_GROUP_get_curve_name(ecgroup))
 #    _C.EC_KEY_set_group(bB, ecgroup)
@@ -242,8 +240,7 @@ def NIZKPK_verify_eqDL(ecgroup, pub, proof):
     #            <s * X - c * Y>_{(X,Y)\in pairs})
     pairs,c,s = proof
 
-    negc = Bn.copy(c)
-    negc = -negc
+    negc = Bn.copy(-c)
 
 #    negc = _C.BN_new()
 #    _C.BN_copy(negc, c)
@@ -253,8 +250,8 @@ def NIZKPK_verify_eqDL(ecgroup, pub, proof):
     b1 = G.pt_mul(s)
     b2 = pub.pt_mul(negc)
     B = b1.pt_add(b2)
-    T1 = EcPt(ecgroup)
-    T = EcPt(ecgroup)
+#    T1 = EcPt(ecgroup)
+#    T = EcPt(ecgroup)
     
 #    bnctx = _C.BN_CTX_new()
 #    G = _C.EC_GROUP_get0_generator(ecgroup)
@@ -278,11 +275,13 @@ def NIZKPK_verify_eqDL(ecgroup, pub, proof):
     for (X,Y) in pairs:
         T1 = X.pt_mul(s)
         T = Y.pt_mul(negc)
-        T = T.pt_add(T1)
+        T.pt_add_inplace(T1)
         buf = T.export()
         ctx.update(buf)
     md = ctx.digest()
+    print md
     cprime = Bn.from_binary(md)
+    print cprime
     
     diff = cprime.int_sub(c)
     
@@ -329,11 +328,11 @@ def NIZKPK_verify_eqDL(ecgroup, pub, proof):
 
 def NIZKPK_free_eqDL_proof(proof):
     pairs,c,s = proof
-    del(c)
-    del(s)
     for (X,Y) in pairs:
         del(X)
         del(Y)
+    del(c)
+    del(s)
      #   _C.EC_POINT_free(X)
      #   _C.EC_POINT_free(Y)
     #_C.BN_clear_free(c)

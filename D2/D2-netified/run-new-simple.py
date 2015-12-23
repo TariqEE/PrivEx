@@ -7,9 +7,8 @@ from cryptoCounter import *
 
 import random
 
-num_DC=1
-num_TKG=1
-num_websites=2
+num_TKS = 2
+num_websites =1
 
 if __name__ == "__main__":
   random.seed("PrivEx")
@@ -21,23 +20,28 @@ if __name__ == "__main__":
   labels = range(num_websites)
   DC = crypto_counts(labels, pk)
 
-  for i in labels:
-    DC.addone(i)
+  items = 1
+  for i in range(items):
+    DC.addone(i % len(labels))
 
   DC.randomize()
 
   data = None
   hashes = []
   eqDLproofs = []
+  print "hash that!"
   data, clidata, hashval = DC.extract_into(data)
   hashes.append((clidata, hashval))
 
   # Check the hashes
+  print "Checking hashes"
   for (clidata, hashval) in hashes:
     if hash_clidata(TKS.ecgroup, clidata) != hashval:
         raise Exception("Hash mismatch!")
   eqDLproofs.append(TKS.partialdecrypt(data))
 
+  # Check the eqDL proofs
+  print "Checking proofs"
   for p in eqDLproofs:
     NIZKPK_verify_eqDL(DC.ecgroup, p[0], p[1])
     NIZKPK_free_eqDL_proof(p[1])

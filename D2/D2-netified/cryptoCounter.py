@@ -5,6 +5,7 @@ from commonFuncs import *
 from petlib.bindings import _C, _FFI, Const
 from petlib.ec import *
 from collections import OrderedDict
+from numpy.oldnumeric.random_array import beta
 
 class crypto_counts:
   def __init__(self, labels, pubkey, curveID = 409, fingerprint = "fingerprint"):
@@ -13,8 +14,8 @@ class crypto_counts:
     self.num = len(labels)
     self.curveID = curveID
     self.pubkey = pubkey
-    print self.pubkey.export().encode("hex")
-    self.lab = OrderedDict()
+#    print self.pubkey.export().encode("hex")
+    self.lab = {}
 
     # Store the group we work in
     # precompute tables and the generator
@@ -41,7 +42,7 @@ class crypto_counts:
       alpha = s_pub
       
       beta = self.pubkey
-      beta = beta.pt_mul(s_priv)
+      beta.pt_mul_inplace(s_priv)
       
       # Adding noise and setting the resolution
       res_noise = int(Noise(sigma, sum_of_sq, p_exit) * resolution)
@@ -49,7 +50,7 @@ class crypto_counts:
       
       kappa = self.gen
       kappa = kappa.pt_mul(n)
-      beta = beta.pt_add(kappa)
+      beta.pt_add_inplace(kappa)
       
       del(kappa)
       del(n)
@@ -113,23 +114,28 @@ class crypto_counts:
 
   def addone(self, label):
 #    _C = self._C
-    (alpha, beta) = self.lab[label]
-    indice = self.lab.keys().index(label)
-    print "before add self.lab", self.lab
-    print "before add self.buf", self.buf
-    beta = beta.pt_add(self.resolution)
+    (_, beta) = self.lab[label]
+#    (alpha, beta) = self.lab[label]
+#    indice = self.lab.keys().index(label)
+#    print "ID of beta BEFORE!: ", id(beta)
+#    print "before add self.lab", self.lab
+#    print "before add self.buf", self.buf
+#    beta = beta.pt_add(self.resolution)
+    beta.pt_add_inplace(self.resolution)
     ## since beta is pass by value and not reference we need to update 
     ## self.lab[label] and self.buf(label) appropriately. Had to make self.lab
     ## an ordered dictionary to maintain the indices across the two data structures.
-    c = (alpha, beta)
-    self.lab[label] = c
-    self.buf[indice] = c
-    print "after add self.lab", self.lab
-    print "after add self.buf", self.buf
+#    c = (alpha, beta)
+#    self.lab[label] = c
+#    self.buf[indice] = c
+#    print "ID of beta AFTER!: ", id(beta)
+#    print "after add self.lab", self.lab
+#    print "after add self.buf", self.buf
 #    _C.EC_POINT_add(self.ecgroup, beta, beta, self.resolution, _FFI.NULL);
 
   def randomize(self):
 #    _C = self._C
+
     for (a,b) in self.buf:
       # Make session keys
       s_priv = self.order.random()
@@ -143,9 +149,9 @@ class crypto_counts:
 #      s_priv = _C.EC_KEY_get0_private_key(session)
 
       alpha = s_pub
-      
+
       beta = self.pubkey
-      beta = beta.pt_mul(s_priv)
+      beta.pt_mul_inplace(s_priv)
       
 #      alpha = _C.EC_POINT_new(self.ecgroup)
 #      _C.EC_POINT_copy(alpha, s_pub);
@@ -154,13 +160,13 @@ class crypto_counts:
 #      _C.EC_POINT_copy(beta, self.pubkey);
 #      _C.EC_POINT_mul(self.ecgroup, beta, _FFI.NULL, beta, s_priv, _FFI.NULL)
 
-      a = a.pt_add(alpha)
-      b = b.pt_add(beta)
+      a.pt_add_inplace(alpha)
+      b.pt_add_inplace(beta)
 #      _C.EC_POINT_add(self.ecgroup, a, a, alpha, _FFI.NULL);
 #      _C.EC_POINT_add(self.ecgroup, b, b, beta, _FFI.NULL);
-      
-      del(a)
-      del(b)
+
+      del(alpha)
+      del(beta)
 #      _C.EC_POINT_clear_free(alpha)
 #      _C.EC_POINT_clear_free(beta)
 #      _C.EC_KEY_free(session)
@@ -168,8 +174,8 @@ class crypto_counts:
   def extract(self):
     buf = []
     for (a,b) in self.buf:
-        acopy = a
-        bcopy = b
+        acopy = copy(a)
+        bcopy = copy(b)
 #        acopy = _C.EC_POINT_dup(a, self.ecgroup)
 #        bcopy = _C.EC_POINT_dup(b, self.ecgroup)
         buf.append((acopy,bcopy))
@@ -185,8 +191,8 @@ class crypto_counts:
     assert len(self.buf) == len(data)
 
     for ((a,b), (alpha, beta)) in zip(data, self.buf):
-      a = a.pt_add(alpha)
-      b = b.pt_add(beta)
+      a.pt_add_inplace(alpha)
+      b.pt_add_inplace(beta)
 #      _C.EC_POINT_add(self.ecgroup, a, a, alpha, _FFI.NULL);
 #      _C.EC_POINT_add(self.ecgroup, b, b, beta, _FFI.NULL);
     return data, clidata, hashval
