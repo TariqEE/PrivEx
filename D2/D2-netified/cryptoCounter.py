@@ -5,7 +5,7 @@ from commonFuncs import *
 from petlib.bindings import _C, _FFI, Const
 from petlib.ec import *
 from collections import OrderedDict
-from numpy.oldnumeric.random_array import beta
+#from numpy.oldnumeric.random_array import beta
 
 class crypto_counts:
   def __init__(self, labels, pubkey, curveID = 409, fingerprint = "fingerprint"):

@@ -170,7 +170,7 @@ def hash_clidata(ecgroup, data):
         # print _FFI.buffer(buf, size)[:].encode("hex")
     _C.SHA256_Final(md, ctx)
     hashval = _FFI.buffer(md, 32)[:]
-    print len(hashval)
+    #print len(hashval)
     return hashval
 
 class crypto_counts:

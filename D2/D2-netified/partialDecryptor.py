@@ -133,7 +133,9 @@ class partialDecryptor:
 
     lookup = {}
     for i in range(-table_size,table_size):
-        point_oct, xsize = gamma.sized_export(point_size)
+        point_oct = gamma. export(point_size)
+        xsize = len(point_oct)
+#        point_oct, xsize = gamma.sized_export(point_size)
 #        xsize = _C.EC_POINT_point2oct(self.ecgroup, gamma,  _C.POINT_CONVERSION_COMPRESSED, 
 #                                      point_oct, point_size, _FFI.NULL);
         assert 0 < xsize < point_size
@@ -158,7 +160,9 @@ class partialDecryptor:
 
     cleartext = []
     for (_, b) in buf:
-        point_oct, xsize = b.sized_export(point_size)
+        point_oct = gamma. export(point_size)
+        xsize = len(point_oct)
+#        point_oct, xsize = b.sized_export(point_size)
 #        xsize = _C.EC_POINT_point2oct(self.ecgroup, b,  _C.POINT_CONVERSION_COMPRESSED,
 #            point_oct, point_size, _FFI.NULL);
         
