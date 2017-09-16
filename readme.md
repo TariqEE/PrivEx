@@ -1,6 +1,6 @@
 # PrivEx: a Privacy-Preserving Statistics collection system for Anonymous Networks
 
-##Instructions
+## Instructions
 (If you are looking to set up and run Privex, then please read S2/S2-netified/README.)
 
 There are two PrivEx schemes. One uses secret sharing (found in the S2 directory) and the other uses distributed decryption (found in the D2 directory).
